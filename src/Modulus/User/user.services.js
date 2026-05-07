@@ -32,9 +32,7 @@ export const createUser = async (data) => {
       subject: "Confirm Email",
       html: template(otp, data.firstName),
     });
-  } catch (err) {
-    console.error("Email Error:", err.message);
-  }
+  } catch (err) {}
 
   return user;
 };
@@ -64,7 +62,7 @@ export const confirmEmail = async ({ email, otp }) => {
   user.emailOTPExpire = null;
 
   await user.save();
-  
+
   return { message: "Email confirmed successfully" };
 };
 
@@ -92,8 +90,17 @@ export const loginUser = async ({ email, password }) => {
   const token = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" },
+    { expiresIn: "1d" }
   );
 
-  return token;
+  return {
+    token,
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+    },
+  };
 };
