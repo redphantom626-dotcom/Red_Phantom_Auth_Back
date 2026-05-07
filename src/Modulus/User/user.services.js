@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../../DB/Models/userModel.js";
-import { eventEmitter, generateOTP } from "../../Utils/Events/event.utils.js";
+import { generateOTP } from "../../Utils/Events/event.utils.js";
 import { sendEmail } from "../../Utils/Email/email.utils.js";
 import { template } from "../../Utils/Email/template.js";
 
@@ -26,23 +26,31 @@ export const createUser = async (data) => {
     confirmedEmail: false,
   });
 
-  eventEmitter.emit("confirmEmail", {
-    to: data.email,
-    otp,
-    firstName: data.firstName,
-  });
+  try {
+    await sendEmail({
+      to: data.email,
+      subject: "Confirm Email",
+      html: template(otp, data.firstName),
+    });
+  } catch (err) {
+    console.error("Email Error:", err.message);
+  }
 
   return user;
 };
 
 export const confirmEmail = async ({ email, otp }) => {
+  if (!email || !otp) {
+    throw new Error("Email and OTP are required");
+  }
+
   const user = await User.findOne({ email });
 
   if (!user) {
     throw new Error("User not found");
   }
 
-  if (!user.emailOTP || user.emailOTP !== otp) {
+  if (!user.emailOTP || user.emailOTP !== otp.toString()) {
     throw new Error("Invalid OTP");
   }
 
@@ -56,6 +64,8 @@ export const confirmEmail = async ({ email, otp }) => {
   user.emailOTPExpire = null;
 
   await user.save();
+  
+  return { message: "Email confirmed successfully" };
 };
 
 export const loginUser = async ({ email, password }) => {
