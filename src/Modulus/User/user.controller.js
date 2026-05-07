@@ -14,8 +14,8 @@ router.post("/signup", async (req, res) => {
 
 router.post("/verify-email", async (req, res) => {
   try {
-    await confirmEmail(req.body);
-    res.json({ message: "Email verified" });
+    const result = await confirmEmail(req.body);
+    res.json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
   }
@@ -23,8 +23,8 @@ router.post("/verify-email", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const token = await loginUser(req.body);
-    res.json({ token });
+    const result = await loginUser(req.body);
+    res.json({ message: "Login success", ...result });
   } catch (e) {
     res.status(400).json({ message: e.message });
   }
