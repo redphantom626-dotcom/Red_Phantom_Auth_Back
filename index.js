@@ -1,13 +1,30 @@
-import dotenv from "dotenv";
-dotenv.config({ path: "./src/config/.env.dev" });
-
 import express from "express";
-import { initApp } from "./src/app.controller.js";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { connectDB } from "./DB/connections.js";
+import userRouter from "./Modulus/User/user.controller.js";
+import { globalError } from "./Middleware/error.middleware.js";
 
-const app = express();
-initApp(app);
+export const initApp = (app) => {
+  app.use(cors({
+    origin: "https://red-phantom-main-mu.vercel.app",
+    credentials: true
+  }));
 
-const PORT = process.env.PORT || 4500;
-app.listen(PORT, () => {
-  console.log(`🔥 Red Phantom running on port ${PORT}`);
-});
+  app.use(express.json());
+  app.use(cookieParser());
+
+  connectDB();
+
+  app.use("/api/users", userRouter);
+
+  app.get("/", (req, res) => {
+    res.json({ message: "Red Phantom API is running 🚀" });
+  });
+
+  app.use("/*dummy", (req, res) =>
+    res.status(404).json({ message: "Route not found" })
+  );
+
+  app.use(globalError);
+};
