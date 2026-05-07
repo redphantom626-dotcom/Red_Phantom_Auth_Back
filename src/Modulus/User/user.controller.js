@@ -24,10 +24,23 @@ router.post("/verify-email", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const result = await loginUser(req.body);
-    res.json({ message: "Login success", ...result });
+
+    return res
+      .cookie("token", result.token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000
+      })
+      .json({
+        message: "Login success",
+        user: result.user
+      });
+
   } catch (e) {
     res.status(400).json({ message: e.message });
   }
+});
 });
 
 export default router;
