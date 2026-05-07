@@ -66,26 +66,16 @@ export const confirmEmail = async ({ email, otp }) => {
   return { message: "Email confirmed successfully" };
 };
 
-export const loginUser = async ({ email, password }) => {
-  if (!email || !password) {
-    throw new Error("Email and password are required");
-  }
+
+export const loginUser = async ({ email, password }, res) => {
+  if (!email || !password) throw new Error("Email and password are required");
 
   const user = await User.findOne({ email });
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  if (!user.confirmedEmail) {
-    throw new Error("Email not confirmed");
-  }
+  if (!user) throw new Error("User not found");
+  if (!user.confirmedEmail) throw new Error("Email not confirmed");
 
   const match = await bcrypt.compare(password, user.password);
-
-  if (!match) {
-    throw new Error("Invalid password");
-  }
+  if (!match) throw new Error("Invalid password");
 
   const token = jwt.sign(
     { id: user._id, role: user.role },
@@ -93,14 +83,18 @@ export const loginUser = async ({ email, password }) => {
     { expiresIn: "1d" }
   );
 
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 24 * 60 * 60 * 1000
+  });
+
   return {
-    token,
     user: {
-      id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-    },
+      email: user.email
+    }
   };
 };
